@@ -14,21 +14,19 @@
 # See the file LICENSE for copying permission.
 
 import logging
-from getpass import getpass
+from getpass import getpass #libreria para ocultar contraseña
 from argparse import ArgumentParser
 import slixmpp
 
-
+### Clase utilizada para hacer un registro de usuario en el servidor
 class Register(slixmpp.ClientXMPP):
     ### Inicializacion del objeto ClientXMPP que va a crear al usuario durante su registro
     def __init__(self, jid, password):
         slixmpp.ClientXMPP.__init__(self, jid, password)
 
-
-        
-
         ### A continuacion se realiza la llamada de metodos inicializadores
         ### que manejaran los eventos de iniciar sesion y registrar
+
         self.user = jid
         self.add_event_handler("session_start", self.start)
         self.add_event_handler("register", self.register)
@@ -42,27 +40,29 @@ class Register(slixmpp.ClientXMPP):
     ### Metodo que permite el registro de un usuario a través de una stanza
     ### generada con IQ
     def register(self, iq):
-        resp = self.Iq()
-        resp['type'] = 'set'
-        resp['register']['username'] = self.boundjid.user
-        resp['register']['password'] = self.password
+        iq = self.Iq()
+        iq['type'] = 'set'
+        iq['register']['username'] = self.boundjid.user
+        iq['register']['password'] = self.password
 
-    ### Se hace un envio de la stanza a la espera de que esta pueda crear
-    ### el usuario que se pretende registrar
+ ### Se hace un envio de la stanza a la espera de que esta pueda crear
+### el usuario que se pretende registrar
         try:
-            resp.send()
-            print("Cuenta creada para", self.boundjid,"\n")
+            iq.send()
+            print("Cuenta creada para ", self.boundjid,"\n")
         except IqError as e:
-            print("No fue posible registrar la cuenta: ", e,"\n")
+            print("Ups. No fue posible registrar la cuenta:", e,"\n")
             self.disconnect()
         except IqTimeout:
             print("El servidor no responde\n")
             self.disconnect()
+        except Exception as e:
+            print(e)
+            self.disconnect()  
 
 
 
-
-class SendMsgBot(slixmpp.ClientXMPP):
+class Cliente(slixmpp.ClientXMPP):
 
     """
     A basic Slixmpp bot that will log in, send a message,
@@ -84,15 +84,15 @@ class SendMsgBot(slixmpp.ClientXMPP):
         # listen for this event so that we we can initialize
         # our roster.
         self.add_event_handler("session_start", self.start)
+       
+        
 
     def start(self, event):
         """
         Process the session_start event.
-
-        Typical actions for the session_start event are
+        Typical actions for the sesself.add_event_handler("register", self.register)ion_start event are
         requesting the roster and broadcasting an initial
         presence stanza.
-
         Arguments:
             event -- An empty dictionary. The session_start
                      event does not provide any additional
@@ -100,19 +100,23 @@ class SendMsgBot(slixmpp.ClientXMPP):
         """
         self.send_presence()
         self.get_roster()
-
         if(self.msg != ""):
             self.send_message(mto=self.recipient,
                           mbody=self.msg,
                           mtype='chat')
-        
+
 
         self.disconnect()
+        # await self.get_roster()
+
+        
+
+        # self.disconnect()
 
 
 if __name__ == '__main__':
     # Setup the command line arguments.
-    parser = ArgumentParser(description=SendMsgBot.__doc__)
+    parser = ArgumentParser(description=Cliente.__doc__)
 
     # Output verbosity options.
     parser.add_argument("-q", "--quiet", help="set logging to ERROR",
@@ -134,66 +138,46 @@ if __name__ == '__main__':
     parser.add_argument("-r", "--register", dest="register",
                         help="Is new user")
 
-    
-
-
     args = parser.parse_args()
 
+    # Setup logging.
     logging.basicConfig(level=args.loglevel,
                         format='%(levelname)-8s %(message)s')
 
-    client = True
-    menu = True
-    while menu:
-        if (client == True):
-            opcion = int(input("Que desea realizar\n1. Registrar cuenta\n2. Iniciar sesion\n"))
+    notlogged = True
+    flag = True
+    while flag:
+        if (notlogged == True):
             
-            
-            if (opcion == 1):
-                print("Porfavor ingrese los siguientes datos :)")
+            opcion= input("1. Iniciar sesion \n2. Registrar nuevo usuario\n")
+            if (opcion== "1"):
                 args.jid = input("Usuario: ")
-                #Se uutiliza la libreria getpass en orden de ocultarla
                 args.password =  getpass(prompt='Contraseña: ')
-                xmpp = SendMsgBot(args.jid, args.password,"","")
+                xmpp =Cliente(args.jid, args.password,"","")
                 xmpp.connect()
                 xmpp.process(forever=False)
-                client = False
-                #break
-
-            elif (opcion == 2):
-
-                print("Por favor ingrese lo siguiente")
-
+                notlogged = False
+            elif (opcion== "2"):
                 if args.jid is None:
-                    
-                    args.jid = input("Usuario: ")
+                    args.jid = input("Ingrese su nombre de usuario: ")
                 if args.password is None:
-                    args.password = getpass("Contraseña: ")
+                    args.password = getpass("Por favor ingrese su contraseña: ")
                 xmpp = Register(args.jid, args.password)
-                xmpp.register_plugin('xep_0030')
-                xmpp.register_plugin('xep_0004') 
                 xmpp.register_plugin('xep_0066') 
                 xmpp.register_plugin('xep_0077') 
+                xmpp.register_plugin('xep_0030') 
+                xmpp.register_plugin('xep_0004') 
+                
                 xmpp.connect()
                 xmpp.process(forever=False)
         else:
-            opcion = int(input("Que desea realizar: \n1. Cerrar sesion\n2. Eliminar cuenta\n3. Mostrar mis contactos y estado\n4. Agregar contacto\n5. Mostrar detalles de un contacto\n6. Enviar mensaje\n7. Unir a grupo\n8. Enviar mensaje a grupo\n9. Mensaje de presencia\n10. Enviar archivo\n11. Usuarios del server\n12. Salir\n"))
-            if(opcion==1):
+            opcion= input("\n1. Cerrar sesion\n2. Eliminar cuenta\n3. Mostrar mis contactos y estado\n4. Agregar contacto\n5. Mostrar detalles de un contacto\n6. Enviar mensaje\n7. Unir a grupo\n8. Enviar mensaje a grupo\n9. Mensaje de presencia\n10. Enviar archivo\n11. Usuarios del server\n12. Salir\n")
+            if(opcion=="6"):
                 if args.to is None:
-                    args.to = input("Ingrese el usuario de su destinatario: ")
+                    args.to = input("Ingrese el usuario del destinatario a quien desea enviar un mensaje ")
                 if args.message is None:
-                    args.message = input("Ingrese su mensaje: ")
-                xmpp = SendMsgBot(args.jid,args.password,args.to,args.message)
-                xmpp.connect()
-                xmpp.process(forever=False)
-
-
-            if(opcion==6):
-                if args.to is None:
-                    args.to = input("Ingrese el usuario de su destinatario: ")
-                if args.message is None:
-                    args.message = input("Ingrese su mensaje: ")
-                xmpp = SendMsgBot(args.jid,args.password,args.to,args.message)
+                    args.message = input("Escriba su mensaje: ")
+                xmpp =Cliente(args.jid,args.password,args.to,args.message)
                 xmpp.connect()
                 xmpp.process(forever=False)
 
