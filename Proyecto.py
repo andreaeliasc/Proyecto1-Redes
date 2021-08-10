@@ -78,12 +78,22 @@ class Cliente(slixmpp.ClientXMPP):
         self.recipient = recipient
         self.msg = message
 
+        self.mis_contactos = []
+
         # The session_start event will be triggered when
         # the bot establishes its connection with the server
         # and the XML streams are ready for use. We want to
         # listen for this event so that we we can initialize
         # our roster.
         self.add_event_handler("session_start", self.start)
+    
+    def cerrar_sesion(self):
+        for jid in self.mis_contactos:
+            ### Envio de notificacion para avisar el cierre de sesion por medio de un mensaje
+            self.notificacion_chat(jid, 'Adiós amigos mios', 'inactive')
+        ### Aqui cerramos la sesion del usuario
+        self.disconnect(wait=False)
+        print("Sesión cerrada")
        
         
 
@@ -108,6 +118,10 @@ class Cliente(slixmpp.ClientXMPP):
 
         self.disconnect()
         # await self.get_roster()
+
+
+
+
 
         
 
@@ -144,10 +158,11 @@ if __name__ == '__main__':
     logging.basicConfig(level=args.loglevel,
                         format='%(levelname)-8s %(message)s')
 
-    notlogged = True
-    flag = True
-    while flag:
-        if (notlogged == True):
+    notOnline = True
+    cliente = None
+    menu = True
+    while menu:
+        if (notOnline == True and cliente==None):
             
             opcion= input("1. Iniciar sesion \n2. Registrar nuevo usuario\n")
             if (opcion== "1"):
@@ -156,7 +171,7 @@ if __name__ == '__main__':
                 xmpp =Cliente(args.jid, args.password,"","")
                 xmpp.connect()
                 xmpp.process(forever=False)
-                notlogged = False
+                notOnline = False
             elif (opcion== "2"):
                 if args.jid is None:
                     args.jid = input("Ingrese su nombre de usuario: ")
@@ -167,11 +182,17 @@ if __name__ == '__main__':
                 xmpp.register_plugin('xep_0077') 
                 xmpp.register_plugin('xep_0030') 
                 xmpp.register_plugin('xep_0004') 
+                cliente = Cliente(args.jid, args.password,"","")
                 
                 xmpp.connect()
                 xmpp.process(forever=False)
         else:
             opcion= input("\n1. Cerrar sesion\n2. Eliminar cuenta\n3. Mostrar mis contactos y estado\n4. Agregar contacto\n5. Mostrar detalles de un contacto\n6. Enviar mensaje\n7. Unir a grupo\n8. Enviar mensaje a grupo\n9. Mensaje de presencia\n10. Enviar archivo\n11. Usuarios del server\n12. Salir\n")
+            
+            if(opcion =="1"):
+                cliente.cerrar_sesion()
+                cliente = None
+            
             if(opcion=="6"):
                 if args.to is None:
                     args.to = input("Ingrese el usuario del destinatario a quien desea enviar un mensaje ")
