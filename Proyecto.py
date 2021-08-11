@@ -16,7 +16,16 @@
 import logging
 from getpass import getpass #libreria para ocultar contraseña
 from argparse import ArgumentParser
+from os import name
 import slixmpp
+from slixmpp.exceptions import XMPPError
+from slixmpp.xmlstream import ET, tostring
+from slixmpp import Iq
+from slixmpp.exceptions import IqError, IqTimeout
+import base64, time
+import agregarContacto
+from agregarContacto import *
+
 
 ### Clase utilizada para hacer un registro de usuario en el servidor
 class Register(slixmpp.ClientXMPP):
@@ -60,6 +69,43 @@ class Register(slixmpp.ClientXMPP):
             print(e)
             self.disconnect()  
 
+class eliminar_account(slixmpp.ClientXMPP):
+
+    def __init__(self, usuario, contraseña):
+
+        slixmpp.ClientXMPP.__init__(self, usuario, contraseña)
+
+        self.user = usuario
+        self.add_event_handler("session_start", self.start)
+
+
+    def start(self, event):
+        self.send_presence()
+        self.get_roster()
+        delete =  self.Iq()
+        delete['type'] = 'set'
+        delete['from'] = self.user
+        delete['id'] = 'del'
+
+
+        fragmentoStanza =  ET.fromstring("<query xmlns='jabber:iq:register'><remove/></query>")
+
+        ### Se agrega la stanza custom para remove register
+        delete.append(fragmentoStanza)
+
+        ### Se hace el envio de la stanza para hacer el unregister de la cuenta
+        try:
+            delete.send()
+            print("Cuenta eliminada")
+        except IqError as e:
+            print("No es posible eliminar la cuenta", e)
+        except IqTimeout:
+            print("El servidor no responde")
+
+
+    
+
+
 
 
 class Cliente(slixmpp.ClientXMPP):
@@ -94,8 +140,34 @@ class Cliente(slixmpp.ClientXMPP):
         ### Aqui cerramos la sesion del usuario
         self.disconnect(wait=False)
         print("Sesión cerrada")
-       
-        
+    
+    def eliminar_cuenta(self, jid):
+        ### Se crea una stanza de tipo IQ para mandar un request de remove register
+        delete =  self.Iq()
+        delete['type'] = 'set'
+        delete['from'] = jid
+        delete['id'] = 'del'
+
+
+        fragmentoStanza =  ET.fromstring("<query xmlns='jabber:iq:register'><remove/></query>")
+
+        ### Se agrega la stanza custom para remove register
+        delete.append(fragmentoStanza)
+
+        ### Se hace el envio de la stanza para hacer el unregister de la cuenta
+        try:
+            delete.send()
+            print("Cuenta eliminada")
+        except IqError as e:
+            print("No es posible eliminar la cuenta", e)
+        except IqTimeout:
+            print("El servidor no responde")
+
+ 
+
+    
+
+
 
     def start(self, event):
         """
@@ -159,19 +231,21 @@ if __name__ == '__main__':
                         format='%(levelname)-8s %(message)s')
 
     notOnline = True
-    cliente = None
+    #cliente = None
     menu = True
     while menu:
-        if (notOnline == True and cliente==None):
+        if (notOnline == True  ):#cliente==None):
             
             opcion= input("1. Iniciar sesion \n2. Registrar nuevo usuario\n")
             if (opcion== "1"):
                 args.jid = input("Usuario: ")
                 args.password =  getpass(prompt='Contraseña: ')
                 xmpp =Cliente(args.jid, args.password,"","")
+                #cliente = Cliente(args.jid, args.password, "","")
                 xmpp.connect()
                 xmpp.process(forever=False)
                 notOnline = False
+                #cliente = Cliente(args.jid, args.password,"","")
             elif (opcion== "2"):
                 if args.jid is None:
                     args.jid = input("Ingrese su nombre de usuario: ")
@@ -182,18 +256,43 @@ if __name__ == '__main__':
                 xmpp.register_plugin('xep_0077') 
                 xmpp.register_plugin('xep_0030') 
                 xmpp.register_plugin('xep_0004') 
-                cliente = Cliente(args.jid, args.password,"","")
-                
+                #jid = Cliente(args.jid, args.password,"","")
                 xmpp.connect()
                 xmpp.process(forever=False)
         else:
+           
             opcion= input("\n1. Cerrar sesion\n2. Eliminar cuenta\n3. Mostrar mis contactos y estado\n4. Agregar contacto\n5. Mostrar detalles de un contacto\n6. Enviar mensaje\n7. Unir a grupo\n8. Enviar mensaje a grupo\n9. Mensaje de presencia\n10. Enviar archivo\n11. Usuarios del server\n12. Salir\n")
             
             if(opcion =="1"):
                 cliente.cerrar_sesion()
                 cliente = None
             
-            if(opcion=="6"):
+            elif opcion == "2" :#and cliente != None:
+                args.jid = input("Ingrese el usuario a eliminar: ")
+                xmpp = eliminar_account(args.jid,args.password)
+                xmpp.connect()
+                xmpp.process(forever=False)
+                #ciente = None
+            
+            elif opcion == "3":
+                print("Buscando contactos")
+                contactos = xmpp.contactos_estado()
+                print("Mis contactos son:\n|Usuario|---|Nombre|---|Subscripción|--|Estado|\n")
+                for contacto in contactos:
+                    print(contacto)
+
+            elif opcion == "4":
+                usuario = input("Ingrese la cuenta del usuario a agregar: ")
+                #nombre = input("Ingresa el nombre del usuario: ")
+                xmpp = agregar_contacto(args.jid, args.password, usuario)
+                xmpp.connect()
+                xmpp.process(forever = False)
+
+            
+
+                            
+            
+            elif(opcion=="6"):
                 if args.to is None:
                     args.to = input("Ingrese el usuario del destinatario a quien desea enviar un mensaje ")
                 if args.message is None:
@@ -201,5 +300,11 @@ if __name__ == '__main__':
                 xmpp =Cliente(args.jid,args.password,args.to,args.message)
                 xmpp.connect()
                 xmpp.process(forever=False)
+
+
+            elif(opcion == "10"):
+                usuario = input("Ingrese la cuenta del usuario a enviar el archivo: ")
+                archivo = input("Ingrese el path del documento: ")
+                xmpp.enviar_archivo(usuario, archivo)
 
  
