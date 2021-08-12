@@ -87,3 +87,30 @@ method called 'send_presence_subscription'. It sends a petition to the user and
 it decide if accept or not the subscription.
 
 
+## Difficulties
+During the development of this project i got to experience difficulties with
+Python exactly with some of the dependecies and libraries needed to be able
+to use XMPP, also i got to stuggle a lot with the sintaxis cause i could'nt 
+understand it completely, even though these project wasn't completed the way i 
+wished i got to learn some stuff.
+
+## What did i learned?
+I got to learn that timing is important maybe if i had started before the 
+result would have been better, also got to learn a lot about the xmpp sintaxis
+even though not completely. Another big lesson i have learned from this is to 
+read documentation about libraries and optimize my time.
+
+
+## Implemented Characteristics
+Login
+Register
+LogOut
+Send Message
+Add Contact
+Delete Contact
+
+
+
+## References
+- https://slixmpp.readthedocs.io/en/slix-1.6.0/getting_started/echobot.html
+- https://slixmpp.readthedocs.io/en/latest/
