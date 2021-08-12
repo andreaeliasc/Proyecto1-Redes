@@ -89,6 +89,11 @@ that the client wish to add. It add a user to client roster with a SliXMPP
 method called 'send_presence_subscription'. It sends a petition to the user and 
 it decide if accept or not the subscription.
 
+- **Send Presence Message** 
+This functionality send a presence message that is a Message Stanza with 
+an internal tag that notificate user receptor, and it is a message that is
+showed everytime that our client is connected.
+
 
 ## Difficulties
 During the development of this project i got to experience difficulties with

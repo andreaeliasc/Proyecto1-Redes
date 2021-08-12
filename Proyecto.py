@@ -232,6 +232,11 @@ if __name__ == '__main__':
     logging.basicConfig(level=args.loglevel,
                         format='%(levelname)-8s %(message)s')
 
+### <----------------------------------------------------------------------------------------------------------->
+### MAIN - PROYECTO 2 PROTOCOLO XMPP
+### Aqui se realiza el menu para poder utilizar el programa y sus funcionalidades del chat con protocolo XMPP
+### Creamos una variable cliente y sala, ambas vacias, para luego poder manejar el resto de opciones
+
     EnLinea = True
     cliente = None
     menu = True
@@ -269,6 +274,7 @@ if __name__ == '__main__':
            
             opcion= input("\n1. Cerrar sesion\n2. Eliminar cuenta\n3. Mostrar mis contactos y estado\n4. Agregar contacto\n5. Mostrar detalles de un contacto\n6. Enviar mensaje\n7. Unir a grupo\n8. Enviar mensaje a grupo\n9. Mensaje de presencia\n10. Enviar archivo\n11. Usuarios del server\n12. Enviar notificaciones\n13. Salir\n")
             
+            #Opcion para cerrar sesion
             if opcion =="1" and cliente != None:
                 cliente.cerrar_sesion()
                 #EnLinea == True
@@ -277,13 +283,14 @@ if __name__ == '__main__':
                 menu = False
                 
 
-            
+            # opcion para eliminar 
             elif opcion == "2" :#and cliente != None:
                 args.jid = input("Ingrese el usuario a eliminar: ")
                 xmpp = eliminar_account(args.jid,args.password)
                 xmpp.connect()
                 xmpp.process(forever=False)
 
+            #opcion para agregar contactos al roster 
             elif opcion == "4":
                 usuario = input("Ingrese la cuenta del usuario a agregar: ")
                 #nombre = input("Ingresa el nombre del usuario: ")
@@ -292,7 +299,7 @@ if __name__ == '__main__':
                 xmpp.process(forever = False)
        
       
-            
+            # Opcion de enviar mensaje DISCLAIMER: NO RECIBE MENSAJES):
             elif opcion=="6":                
                 args.to = input("Ingrese el usuario del destinatario a quien desea enviar un mensaje ")
                 if args.message is None:
@@ -301,11 +308,16 @@ if __name__ == '__main__':
                 xmpp.connect()
                 xmpp.process(forever=False)
 
+
+            #Mensaje de presencia personalizado
             elif opcion=="9":
                 mensajePresencia = input("Ingrese su mensaje de presencia: ")
                 xmpp = Cliente(args.jid,args.password,"", "", mensajePresencia)
                 xmpp.connect()
                 xmpp.process(forever=False)
 
-            
 
+            #SALIR
+            elif opcion == "13":
+                menu = False
+                print("Gracias por visitarnos hoy")
