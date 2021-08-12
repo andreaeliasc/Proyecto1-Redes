@@ -20,6 +20,9 @@ list maintenance.
 ## Programing Language
 - **Python** - 3.7.0v
 
+##Functionality Video
+https://youtu.be/zgr_7JHmnC4
+
 
 ## Dependencies
 These are the dependences or libraries that use the client
