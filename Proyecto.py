@@ -3,16 +3,10 @@
 # Redes
 # Ing Jorge Yass
 
-# Chat Bot extraido de la guia de slixmpp
+# Codigo guiado de la guia de slixmpp para Python
+# Se esta utilizando la version de python 3.7
 
-
-#!/usr/bin/env python3
-
-# Slixmpp: The Slick XMPP Library
-# Copyright (C) 2010  Nathanael C. Fritz
-# This file is part of Slixmpp.
-# See the file LICENSE for copying permission.
-
+#Librerias a utilizar
 import logging
 from getpass import getpass #libreria para ocultar contraseña
 from argparse import ArgumentParser
@@ -25,6 +19,7 @@ from slixmpp.exceptions import IqError, IqTimeout
 import base64, time
 import agregarContacto
 from agregarContacto import *
+
 
 
 ### Clase utilizada para hacer un registro de usuario en el servidor
@@ -69,6 +64,13 @@ class Register(slixmpp.ClientXMPP):
             print(e)
             self.disconnect()  
 
+
+        
+        
+
+#clase para eliminar una cuenta
+  
+
 class eliminar_account(slixmpp.ClientXMPP):
 
     def __init__(self, usuario, contraseña):
@@ -77,6 +79,7 @@ class eliminar_account(slixmpp.ClientXMPP):
 
         self.user = usuario
         self.add_event_handler("session_start", self.start)
+       
 
 
     def start(self, event):
@@ -110,36 +113,25 @@ class eliminar_account(slixmpp.ClientXMPP):
 
 class Cliente(slixmpp.ClientXMPP):
 
-    """
-    A basic Slixmpp bot that will log in, send a message,
-    and then log out.
-    """
+   
 
-    def __init__(self, jid, password, recipient, message):
+    def __init__(self, jid, password, recipient, message, xd):
         slixmpp.ClientXMPP.__init__(self, jid, password)
 
-        # The message we wish to send, and the JID that
-        # will receive it.
+        
         self.user = jid
         self.recipient = recipient
         self.msg = message
-
+        self.mensajePresencia = xd
         self.mis_contactos = []
 
-        # The session_start event will be triggered when
-        # the bot establishes its connection with the server
-        # and the XML streams are ready for use. We want to
-        # listen for this event so that we we can initialize
-        # our roster.
+
+
+        # Se inicia sesion
         self.add_event_handler("session_start", self.start)
+
+
     
-    def cerrar_sesion(self):
-        for jid in self.mis_contactos:
-            ### Envio de notificacion para avisar el cierre de sesion por medio de un mensaje
-            self.notificacion_chat(jid, 'Adiós amigos mios', 'inactive')
-        ### Aqui cerramos la sesion del usuario
-        self.disconnect(wait=False)
-        print("Sesión cerrada")
     
     def eliminar_cuenta(self, jid):
         ### Se crea una stanza de tipo IQ para mandar un request de remove register
@@ -170,25 +162,28 @@ class Cliente(slixmpp.ClientXMPP):
 
 
     def start(self, event):
-        """
-        Process the session_start event.
-        Typical actions for the sesself.add_event_handler("register", self.register)ion_start event are
-        requesting the roster and broadcasting an initial
-        presence stanza.
-        Arguments:
-            event -- An empty dictionary. The session_start
-                     event does not provide any additional
-                     data.
-        """
-        self.send_presence()
+        
+        #self.send_presence()
         self.get_roster()
         if(self.msg != ""):
             self.send_message(mto=self.recipient,
                           mbody=self.msg,
                           mtype='chat')
-
-
+        if self.mensajePresencia != "":
+            self.send_presence(pshow = "chat", pstatus = mensajePresencia)
+        else:
+            self.send_presence(pshow = "chat", pstatus = "Hola amixes")
+        self.get_roster()
         self.disconnect()
+
+        # if(self.msg != ""):
+        #     self.send_message(mto=self.recipient,
+        #                   mbody=self.msg,
+        #                   mtype='chat')
+
+
+
+       
         # await self.get_roster()
 
 
@@ -201,10 +196,10 @@ class Cliente(slixmpp.ClientXMPP):
 
 
 if __name__ == '__main__':
-    # Setup the command line arguments.
+   
     parser = ArgumentParser(description=Cliente.__doc__)
 
-    # Output verbosity options.
+   
     parser.add_argument("-q", "--quiet", help="set logging to ERROR",
                         action="store_const", dest="loglevel",
                         const=logging.ERROR, default=logging.INFO)
@@ -212,7 +207,7 @@ if __name__ == '__main__':
                         action="store_const", dest="loglevel",
                         const=logging.DEBUG, default=logging.INFO)
 
-    # JID and password options.
+    # JID y contraseña
     parser.add_argument("-j", "--jid", dest="jid",
                         help="JID to use")
     parser.add_argument("-p", "--password", dest="password",
@@ -230,23 +225,27 @@ if __name__ == '__main__':
     logging.basicConfig(level=args.loglevel,
                         format='%(levelname)-8s %(message)s')
 
-    notOnline = True
+    EnLinea = True
     #cliente = None
     menu = True
     while menu:
-        if (notOnline == True  ):#cliente==None):
+        if EnLinea == True  :#cliente==None):
             
             opcion= input("1. Iniciar sesion \n2. Registrar nuevo usuario\n")
-            if (opcion== "1"):
+
+
+            if opcion== "1":
                 args.jid = input("Usuario: ")
                 args.password =  getpass(prompt='Contraseña: ')
-                xmpp =Cliente(args.jid, args.password,"","")
+                xmpp =Cliente(args.jid, args.password,"","","")
                 #cliente = Cliente(args.jid, args.password, "","")
                 xmpp.connect()
                 xmpp.process(forever=False)
-                notOnline = False
+                EnLinea = False
                 #cliente = Cliente(args.jid, args.password,"","")
-            elif (opcion== "2"):
+
+
+            elif opcion== "2":
                 if args.jid is None:
                     args.jid = input("Ingrese su nombre de usuario: ")
                 if args.password is None:
@@ -261,25 +260,20 @@ if __name__ == '__main__':
                 xmpp.process(forever=False)
         else:
            
-            opcion= input("\n1. Cerrar sesion\n2. Eliminar cuenta\n3. Mostrar mis contactos y estado\n4. Agregar contacto\n5. Mostrar detalles de un contacto\n6. Enviar mensaje\n7. Unir a grupo\n8. Enviar mensaje a grupo\n9. Mensaje de presencia\n10. Enviar archivo\n11. Usuarios del server\n12. Salir\n")
+            opcion= input("\n1. Cerrar sesion\n2. Eliminar cuenta\n3. Mostrar mis contactos y estado\n4. Agregar contacto\n5. Mostrar detalles de un contacto\n6. Enviar mensaje\n7. Unir a grupo\n8. Enviar mensaje a grupo\n9. Mensaje de presencia\n10. Enviar archivo\n11. Usuarios del server\n12. Enviar notificaciones\n13. Salir\n")
             
-            if(opcion =="1"):
-                cliente.cerrar_sesion()
-                cliente = None
+            if opcion =="1":
+                #cliente.cerrar_sesion()
+                xmpp.disconnect()
+                print("Se ha cerrado la sesion")
+                
+
             
             elif opcion == "2" :#and cliente != None:
                 args.jid = input("Ingrese el usuario a eliminar: ")
                 xmpp = eliminar_account(args.jid,args.password)
                 xmpp.connect()
                 xmpp.process(forever=False)
-                #ciente = None
-            
-            elif opcion == "3":
-                print("Buscando contactos")
-                contactos = xmpp.contactos_estado()
-                print("Mis contactos son:\n|Usuario|---|Nombre|---|Subscripción|--|Estado|\n")
-                for contacto in contactos:
-                    print(contacto)
 
             elif opcion == "4":
                 usuario = input("Ingrese la cuenta del usuario a agregar: ")
@@ -287,24 +281,22 @@ if __name__ == '__main__':
                 xmpp = agregar_contacto(args.jid, args.password, usuario)
                 xmpp.connect()
                 xmpp.process(forever = False)
-
+       
+      
             
-
-                            
-            
-            elif(opcion=="6"):
-                if args.to is None:
-                    args.to = input("Ingrese el usuario del destinatario a quien desea enviar un mensaje ")
+            elif opcion=="6":                
+                args.to = input("Ingrese el usuario del destinatario a quien desea enviar un mensaje ")
                 if args.message is None:
                     args.message = input("Escriba su mensaje: ")
-                xmpp =Cliente(args.jid,args.password,args.to,args.message)
+                xmpp =Cliente(args.jid,args.password,args.to,args.message, "")
                 xmpp.connect()
                 xmpp.process(forever=False)
 
+            elif opcion=="9":
+                mensajePresencia = input("Ingrese su mensaje de presencia: ")
+                xmpp = Cliente(args.jid,args.password,"", "", mensajePresencia)
+                xmpp.connect()
+                xmpp.process(forever=False)
 
-            elif(opcion == "10"):
-                usuario = input("Ingrese la cuenta del usuario a enviar el archivo: ")
-                archivo = input("Ingrese el path del documento: ")
-                xmpp.enviar_archivo(usuario, archivo)
+            
 
- 

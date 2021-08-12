@@ -8,7 +8,9 @@ from slixmpp.exceptions import XMPPError
 from slixmpp.xmlstream import ET, tostring
 from slixmpp import Iq
 from slixmpp.exceptions import IqError, IqTimeout
-import base64, time
+
+
+#Clase que nos permite agregar un contacto al roster
 
 class agregar_contacto(slixmpp.ClientXMPP):
 
@@ -28,3 +30,16 @@ class agregar_contacto(slixmpp.ClientXMPP):
             print("No se pudo agregar contacto")
         
         self.disconnect() 
+
+
+
+
+
+
+
+
+
+
+
+    
+
