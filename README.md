@@ -1,4 +1,4 @@
-# Proyecto1-Redes
+# XMPP Client
 
 # XMPP Client Implementation - Network Project
 
@@ -122,3 +122,6 @@ Delete Contact
 ## References
 - https://slixmpp.readthedocs.io/en/slix-1.6.0/getting_started/echobot.html
 - https://slixmpp.readthedocs.io/en/latest/
+- [XMPP: The Definitive Guide By Saint, P. Smith, K & Troncon, R.](https://oriolrius.cat/blog/wp-content/uploads/2009/10/Oreilly.XMPP.The.Definitive.Guide.May.2009.pdf)
+- [XMPP - Extensions reference](https://xmpp.org/)
+- [Client Tester](https://jwchat.org/)
