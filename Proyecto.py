@@ -155,6 +155,13 @@ class Cliente(slixmpp.ClientXMPP):
         except IqTimeout:
             print("El servidor no responde")
 
+    
+    def cerrar_sesion(self):
+        
+        ### Aqui cerramos la sesion del usuario
+        self.disconnect(wait=False)
+        print("Sesión cerrada")
+
  
 
     
@@ -226,10 +233,10 @@ if __name__ == '__main__':
                         format='%(levelname)-8s %(message)s')
 
     EnLinea = True
-    #cliente = None
+    cliente = None
     menu = True
     while menu:
-        if EnLinea == True  :#cliente==None):
+        if EnLinea == True and cliente == None :#cliente==None):
             
             opcion= input("1. Iniciar sesion \n2. Registrar nuevo usuario\n")
 
@@ -242,7 +249,7 @@ if __name__ == '__main__':
                 xmpp.connect()
                 xmpp.process(forever=False)
                 EnLinea = False
-                #cliente = Cliente(args.jid, args.password,"","")
+                cliente = Cliente(args.jid, args.password,"","","")
 
 
             elif opcion== "2":
@@ -262,10 +269,12 @@ if __name__ == '__main__':
            
             opcion= input("\n1. Cerrar sesion\n2. Eliminar cuenta\n3. Mostrar mis contactos y estado\n4. Agregar contacto\n5. Mostrar detalles de un contacto\n6. Enviar mensaje\n7. Unir a grupo\n8. Enviar mensaje a grupo\n9. Mensaje de presencia\n10. Enviar archivo\n11. Usuarios del server\n12. Enviar notificaciones\n13. Salir\n")
             
-            if opcion =="1":
-                #cliente.cerrar_sesion()
+            if opcion =="1" and cliente != None:
+                cliente.cerrar_sesion()
+                #EnLinea == True
+                cliente == None
                 xmpp.disconnect()
-                print("Se ha cerrado la sesion")
+                menu = False
                 
 
             
