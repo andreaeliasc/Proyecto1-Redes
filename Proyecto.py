@@ -13,12 +13,18 @@ from argparse import ArgumentParser
 from os import name
 import slixmpp
 from slixmpp.exceptions import XMPPError
-from slixmpp.xmlstream import ET, tostring
 from slixmpp import Iq
 from slixmpp.exceptions import IqError, IqTimeout
+from slixmpp.xmlstream.stanzabase import ET, ElementBase 
+import threading
 import base64, time
 import agregarContacto
 from agregarContacto import *
+
+
+from slixmpp.plugins import BasePlugin, register_plugin
+
+
 
 
 
@@ -69,6 +75,9 @@ class Register(slixmpp.ClientXMPP):
         
 
 #clase para eliminar una cuenta
+
+
+
   
 
 class eliminar_account(slixmpp.ClientXMPP):
@@ -115,7 +124,7 @@ class Cliente(slixmpp.ClientXMPP):
 
    
 
-    def __init__(self, jid, password, recipient, message, xd):
+    def __init__(self, jid, password, recipient, message, xd, room, alias,body, file):
         slixmpp.ClientXMPP.__init__(self, jid, password)
 
         
@@ -124,11 +133,61 @@ class Cliente(slixmpp.ClientXMPP):
         self.msg = message
         self.mensajePresencia = xd
         self.mis_contactos = []
+        self.hab = room
+        self.name = alias
+        self.body = body
+        self.archivo = file
+
+       ### Plugins que se utilizan para los distintos servicios de XMPP
+        self.register_plugin('xep_0077') # Band Registration
+        self.register_plugin('xep_0030') # Service Discovery
+        self.register_plugin('xep_0199') # XMPP Ping
+        self.register_plugin('xep_0004') # Data forms
+        self.register_plugin('xep_0077') # In-band Registration
+        self.register_plugin('xep_0045') # Mulit-User Chat (MUC)
+        self.register_plugin('xep_0096') # Jabber Search
+        self.register_plugin('xep_0065') # Transport Bytestreams
+        self.register_plugin('xep_0047', {
+            'auto_accept': True
+        }) ### Accept Incoming Suscriptions
 
 
 
         # Se inicia sesion
         self.add_event_handler("session_start", self.start)
+
+    def enviar_archivo(self, usuario, archivo):
+        ### Se abre el archivo que se indica en el path ingresado
+        with open(archivo, "rb") as file:
+            ### Se hace una codificacion del archivo a base64 string
+            mensaje = base64.b64encode(file.read()).decode('utf-8')
+            try:
+                ### Se envia la notificacion de chat para el envio de mensaje
+               
+                time.sleep(2)
+                ### Se envia el archivo codificado en el mensaje en base64 string
+                self.send_message(mto=usuario,mbody=mensaje,mtype="chat")
+            except IqError as e:
+                print("No se pudo enviar el archivo", e)
+            except IqTimeout:
+                print("El servidor no responde")
+
+
+    def unirse_sala(self, room, alias):
+        ### A traves del plugin xep_0045 se hace una extension para usar Multi-User Text Chat
+        ### Con esto podemos unirnos a un ROOM para chatear con un grupo, o se crea si no existe
+        try:
+            self.plugin['xep_0045'].join_muc(room, alias)
+            return 1
+        except IqError as e:
+            print("No se pudo crear una sala", e)
+        except IqTimeout:
+            print("El servidor no responde")
+
+    ### Metodo para enviar un mensaje a un grupo
+    def enviar_sala(self, room, body):
+        ### Envio de mensajes a un grupo especificando en la stanza que es de tipo 'groupchat'
+        self.send_message(mto=room, mbody=body, mtype='groupchat')
 
 
     
@@ -240,6 +299,7 @@ if __name__ == '__main__':
     EnLinea = True
     cliente = None
     menu = True
+    sala = None
     while menu:
         if EnLinea == True and cliente == None :#cliente==None):
             
@@ -249,12 +309,12 @@ if __name__ == '__main__':
             if opcion== "1":
                 args.jid = input("Usuario: ")
                 args.password =  getpass(prompt='Contraseña: ')
-                xmpp =Cliente(args.jid, args.password,"","","")
+                xmpp =Cliente(args.jid, args.password,"","","","","","","")
                 #cliente = Cliente(args.jid, args.password, "","")
                 xmpp.connect()
                 xmpp.process(forever=False)
                 EnLinea = False
-                cliente = Cliente(args.jid, args.password,"","","")
+                cliente = Cliente(args.jid, args.password,"","","","","","","")
 
 
             elif opcion== "2":
@@ -267,7 +327,6 @@ if __name__ == '__main__':
                 xmpp.register_plugin('xep_0077') 
                 xmpp.register_plugin('xep_0030') 
                 xmpp.register_plugin('xep_0004') 
-                #jid = Cliente(args.jid, args.password,"","")
                 xmpp.connect()
                 xmpp.process(forever=False)
         else:
@@ -304,7 +363,37 @@ if __name__ == '__main__':
                 args.to = input("Ingrese el usuario del destinatario a quien desea enviar un mensaje ")
                 if args.message is None:
                     args.message = input("Escriba su mensaje: ")
-                xmpp =Cliente(args.jid,args.password,args.to,args.message, "")
+                xmpp =Cliente(args.jid,args.password,args.to,args.message, "","","","","")
+                xmpp.connect()
+                xmpp.process(forever=False)
+
+            elif opcion == "7":
+                print("Ejemplo de nombre de sala: sala@conference.alumchat.xyz")
+                sala = input("Ingrese el nombre de la sala: ")
+                alias = input("Ingrese el alias que usara en la sala: ")
+                if '@conference.alumchat.xyz' in sala:
+                    response = xmpp.unirse_sala(sala, alias)
+                    if response == 1:
+                        print("Te has unido a las sala:" + str(sala))
+                        # xmpp.connect()
+                        # xmpp.process(forever=False)
+                    else:
+                        print("No fue posible conectarse")
+                else:
+                    print("Error en nombre de la sala")
+            
+                xmpp.connect()
+                xmpp.process(forever=False)
+
+            elif opcion == "8" :
+                print("Estas en la sala:", sala)
+                mensaje = input("Ingrese el mensaje a enviar: ")
+                if '@conference.alumchat.xyz' in sala:
+                    xmpp.enviar_sala(sala, mensaje)
+                    print("Mensaje enviado a la sala " + str(sala) + ": " + str(mensaje))
+                   
+                else:
+                    print("Error en nombre de la sala")
                 xmpp.connect()
                 xmpp.process(forever=False)
 
@@ -312,9 +401,17 @@ if __name__ == '__main__':
             #Mensaje de presencia personalizado
             elif opcion=="9":
                 mensajePresencia = input("Ingrese su mensaje de presencia: ")
-                xmpp = Cliente(args.jid,args.password,"", "", mensajePresencia)
+                xmpp = Cliente(args.jid,args.password,"", "", mensajePresencia,"","","","")
                 xmpp.connect()
                 xmpp.process(forever=False)
+
+            elif opcion == "10":
+                usuario = input("Ingrese la cuenta del usuario a enviar el archivo: ")
+                archivo = input("Ingrese el path del documento: ")
+                xmpp.enviar_archivo(usuario, archivo)
+                xmpp.connect()
+                xmpp.process(forever=False)
+
 
 
             #SALIR

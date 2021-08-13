@@ -43,8 +43,5 @@ class agregar_contacto(slixmpp.ClientXMPP):
 
 
 
-
-
-
     
 
